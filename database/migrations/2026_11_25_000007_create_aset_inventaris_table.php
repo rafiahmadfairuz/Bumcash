@@ -1,0 +1,3 @@
+<?php
+use Illuminate\Database\Migrations\Migration; use Illuminate\Database\Schema\Blueprint; use Illuminate\Support\Facades\Schema;
+return new class extends Migration { public function up(): void { Schema::create('aset_inventaris', function (Blueprint $table) { $table->id(); $table->string('kode_aset',30)->unique(); $table->foreignId('unit_usaha_id')->constrained('unit_usaha'); $table->string('nama_aset',100); $table->date('tanggal_perolehan'); $table->decimal('nilai_perolehan',12,2); $table->enum('kondisi',['BAIK','PERLU_PERBAIKAN','RUSAK_BERAT']); $table->timestamps(); }); } public function down(): void { Schema::dropIfExists('aset_inventaris'); } };
