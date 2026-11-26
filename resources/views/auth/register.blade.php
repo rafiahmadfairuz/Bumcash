@@ -1,0 +1,1 @@
+@include('auth.partials.shell', ['title' => 'Daftar warga Bumcash', 'heading' => 'Buat akun warga', 'description' => 'Daftar untuk melihat tagihan dan layanan BUMDes. Verifikasi email diperlukan.', 'content' => 'register'])

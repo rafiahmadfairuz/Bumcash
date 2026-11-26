@@ -1,0 +1,1 @@
+@include('auth.partials.shell', ['title' => 'Lupa kata sandi', 'heading' => 'Lupa kata sandi?', 'description' => 'Masukkan email akun Anda. Jika terdaftar, kami akan mengirim tautan untuk membuat kata sandi baru.', 'content' => 'forgot-password'])

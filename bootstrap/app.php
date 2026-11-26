@@ -14,7 +14,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias(['role' => \App\Http\Middleware\RoleMiddleware::class]);
         $middleware->redirectGuestsTo('/login');
-        $middleware->redirectUsersTo(fn (Request $request): string => $request->user()?->role === 'WARGA' ? '/warga' : '/pengelola');
+        $middleware->redirectUsersTo(fn (Request $request): string => $request->user()?->role === 'WARGA' ? ($request->user()->hasVerifiedEmail() ? '/warga' : '/email/verify') : '/pengelola');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

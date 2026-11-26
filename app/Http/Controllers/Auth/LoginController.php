@@ -29,9 +29,24 @@ class LoginController extends Controller
             'remember' => ['nullable', 'boolean'],
         ]);
 
-        $user = User::where('username', $data['identifier'])->first();
+        $user = User::where('username', $data['identifier'])->orWhere('email', mb_strtolower($data['identifier']))->first();
         if (! $user || ! Hash::check($data['password'], $user->password)) {
             return back()->withErrors(['identifier' => 'Username atau kata sandi belum sesuai.'])->onlyInput('identifier');
+        }
+
+        if ($user->role === 'WARGA' && blank($user->email)) {
+            Auth::login($user, (bool) ($data['remember'] ?? false));
+            $request->session()->regenerate();
+
+            return redirect()->route('warga.dashboard');
+        }
+
+        if ($user->role === 'WARGA' && ! $user->hasVerifiedEmail()) {
+            $user->sendEmailVerificationNotification();
+            Auth::login($user, (bool) ($data['remember'] ?? false));
+            $request->session()->regenerate();
+
+            return redirect()->route('verification.notice')->with('status', 'Akun Anda sudah terdaftar tetapi email belum diverifikasi. Tautan verifikasi baru telah dikirim.');
         }
 
         Auth::login($user, (bool) ($data['remember'] ?? false));

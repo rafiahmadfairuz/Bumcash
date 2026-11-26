@@ -1,0 +1,1 @@
+@include('auth.partials.shell', ['title' => 'Atur ulang kata sandi', 'heading' => 'Buat kata sandi baru', 'description' => 'Pilih kata sandi kuat yang belum pernah Anda gunakan sebelumnya.', 'content' => 'reset-password'])

@@ -1,0 +1,1 @@
+@include('auth.partials.shell', ['title' => 'Verifikasi email', 'heading' => 'Verifikasi alamat email', 'description' => 'Buka tautan verifikasi yang kami kirim. Setelah email terverifikasi, Anda dapat menggunakan layanan warga.', 'content' => 'verify-email'])
