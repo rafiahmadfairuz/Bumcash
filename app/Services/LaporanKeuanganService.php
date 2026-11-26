@@ -55,21 +55,50 @@ class LaporanKeuanganService
 
         $bulanAkhir = $tanggalAkhir->copy()->endOfMonth();
         $bulanMulai = $bulanAkhir->copy()->startOfMonth()->subMonths(5);
-        $barisTren = ArusKas::query()
+        $barisTren = ArusKas::with('unitUsaha')
             ->whereBetween('tanggal_transaksi', [$bulanMulai->toDateString(), $bulanAkhir->toDateString()])
             ->when($unitUsahaId, fn ($query) => $query->where('unit_usaha_id', $unitUsahaId))
-            ->get(['tanggal_transaksi', 'jenis', 'nominal']);
+            ->get(['id', 'tanggal_transaksi', 'jenis', 'nominal', 'sumber', 'kategori_akun', 'keterangan', 'unit_usaha_id']);
         $trenPerBulan = [];
         $labelBulan = [];
         for ($i = 0; $i < 6; $i++) {
             $bulan = $bulanMulai->copy()->addMonths($i);
             $kunci = $bulan->format('Y-m');
-            $trenPerBulan[$kunci] = ['PEMASUKAN' => 0.0, 'PENGELUARAN' => 0.0];
+            $trenPerBulan[$kunci] = [
+                'PEMASUKAN' => 0.0,
+                'LAYANAN_WARGA' => 0.0,
+                'PEMASUKAN_MANUAL' => 0.0,
+                'PENGELUARAN' => 0.0,
+                'RINCIAN_PEMASUKAN' => [],
+                'RINCIAN_PENGELUARAN' => [],
+            ];
             $labelBulan[] = $bulan->locale('id')->translatedFormat('M y');
         }
         foreach ($barisTren as $baris) {
             $kunci = $baris->tanggal_transaksi->format('Y-m');
             if (isset($trenPerBulan[$kunci])) $trenPerBulan[$kunci][$baris->jenis] += (float) $baris->nominal;
+            if (isset($trenPerBulan[$kunci]) && $baris->jenis === 'PEMASUKAN') {
+                $sumberLayanan = $baris->sumber === 'OTOMATIS_LAYANAN_WARGA';
+                $trenPerBulan[$kunci][$sumberLayanan ? 'LAYANAN_WARGA' : 'PEMASUKAN_MANUAL'] += (float) $baris->nominal;
+                $trenPerBulan[$kunci]['RINCIAN_PEMASUKAN'][] = [
+                    'tanggal' => $baris->tanggal_transaksi->format('d M Y'),
+                    'unit' => $baris->unitUsaha->nama_unit,
+                    'kategori' => $baris->kategori_akun,
+                    'keterangan' => $baris->keterangan,
+                    'sumber' => $sumberLayanan ? 'Pembayaran layanan warga' : 'Pemasukan manual',
+                    'nominal' => (float) $baris->nominal,
+                ];
+            }
+            if (isset($trenPerBulan[$kunci]) && $baris->jenis === 'PENGELUARAN') {
+                $trenPerBulan[$kunci]['RINCIAN_PENGELUARAN'][] = [
+                    'tanggal' => $baris->tanggal_transaksi->format('d M Y'),
+                    'unit' => $baris->unitUsaha->nama_unit,
+                    'kategori' => $baris->kategori_akun,
+                    'keterangan' => $baris->keterangan,
+                    'sumber' => 'Pengeluaran manual',
+                    'nominal' => (float) $baris->nominal,
+                ];
+            }
         }
 
         $unitKinerja = UnitUsaha::query()->where('status_aktif', true)->orderBy('nama_unit')
@@ -99,7 +128,17 @@ class LaporanKeuanganService
             'collection_rate' => $nominalTerbit > 0 ? ($nominalLunas / $nominalTerbit) * 100 : 0,
             'label_bulan' => $labelBulan,
             'tren_pemasukan' => array_column($trenPerBulan, 'PEMASUKAN'),
+            'tren_layanan_warga' => array_column($trenPerBulan, 'LAYANAN_WARGA'),
+            'tren_pemasukan_manual' => array_column($trenPerBulan, 'PEMASUKAN_MANUAL'),
             'tren_pengeluaran' => array_column($trenPerBulan, 'PENGELUARAN'),
+            'rincian_pemasukan' => array_map(
+                fn (array $bulan) => $bulan['RINCIAN_PEMASUKAN'],
+                array_values($trenPerBulan)
+            ),
+            'rincian_pengeluaran' => array_map(
+                fn (array $bulan) => $bulan['RINCIAN_PENGELUARAN'],
+                array_values($trenPerBulan)
+            ),
             'unit_kinerja' => $unitKinerja,
         ];
     }

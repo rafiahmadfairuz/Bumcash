@@ -22,9 +22,30 @@
             <article id="unit-usaha" class="min-w-0 overflow-hidden rounded-2xl border border-[#ECE8DA] bg-white p-4 sm:p-6">
                 <div class="flex min-w-0 flex-col justify-between gap-4 sm:flex-row sm:items-start">
                     <div class="min-w-0"><h3 class="text-base font-semibold text-[#1C1917]">Ringkasan Keuangan BUMDes</h3><p class="mt-1 text-xs text-[#6B665C]">Pemasukan dan pengeluaran · enam bulan hingga {{ $tanggalAkhir->locale('id')->translatedFormat('F Y') }}</p><p class="mt-3 text-2xl font-bold tabular-nums tracking-tight text-[#1C1917]">Rp {{ number_format($pemasukan_periode,0,',','.') }}</p><span class="mt-2 inline-flex rounded-full bg-[#FDE68A] px-2 py-0.5 text-[clamp(.6875rem,.72vw,.75rem)] sm:text-[11px] lg:text-xs font-semibold text-[#624300]">Pemasukan periode berjalan</span></div>
-                    <div class="flex shrink-0 flex-wrap items-center gap-3 sm:flex-col sm:items-end"><label class="sr-only" for="filter-unit-chart">Filter unit usaha</label><select id="filter-unit-chart" onchange="const u=this.value;const q=new URLSearchParams(window.location.search);u?q.set('unit_usaha_id',u):q.delete('unit_usaha_id');window.location.search=q.toString()" class="max-w-44 rounded-lg border border-[#ECE8DA] bg-white px-3 py-1.5 text-xs text-[#6B665C]"><option value="">Semua Unit</option>@foreach($unitUsaha as $unit)<option value="{{ $unit->id }}" @selected(($filter['unit_usaha_id'] ?? '') == $unit->id)>{{ $unit->nama_unit }}</option>@endforeach</select><div class="flex items-center gap-3 text-[clamp(.6875rem,.72vw,.75rem)] sm:text-[11px] lg:text-xs text-[#6B665C]"><span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-sm bg-[#E09F09]"></span>Pemasukan</span><span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-sm bg-[#ECE8DA]"></span>Pengeluaran</span></div></div>
+                    <div class="flex shrink-0 flex-wrap items-center gap-3 sm:flex-col sm:items-end"><label class="sr-only" for="filter-unit-chart">Filter unit usaha</label><select id="filter-unit-chart" onchange="const u=this.value;const q=new URLSearchParams(window.location.search);u?q.set('unit_usaha_id',u):q.delete('unit_usaha_id');window.location.search=q.toString()" class="max-w-44 rounded-lg border border-[#ECE8DA] bg-white px-3 py-1.5 text-xs text-[#6B665C]"><option value="">Semua Unit</option>@foreach($unitUsaha as $unit)<option value="{{ $unit->id }}" @selected(($filter['unit_usaha_id'] ?? '') == $unit->id)>{{ $unit->nama_unit }}</option>@endforeach</select><div class="flex flex-wrap items-center gap-3 text-[clamp(.6875rem,.72vw,.75rem)] sm:text-[11px] lg:text-xs text-[#6B665C]"><span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-sm bg-[#2F7D4A]"></span>Layanan warga</span><span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-sm bg-[#E09F09]"></span>Pemasukan manual</span><span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-sm bg-[#A83838]"></span>Pengeluaran</span></div></div>
                 </div>
-                <div class="mt-4 w-full min-w-0 overflow-hidden"><div id="cashflow-chart" class="h-[250px] w-full min-w-0" aria-label="Grafik arus kas pemasukan dan pengeluaran enam bulan"></div></div>
+                <div class="mt-4 w-full min-w-0 overflow-hidden">
+                    <div id="cashflow-chart" class="h-[250px] w-full min-w-0" aria-label="Grafik pemasukan dan pengeluaran enam bulan"></div>
+                </div>
+                <div id="cashflow-detail" class="mt-4 rounded-xl border border-[#ECE8DA] bg-[#FAF8F1] p-3 sm:p-4" aria-live="polite">
+                    <div class="flex items-center justify-between gap-3">
+                        <p id="cashflow-detail-period" class="text-xs font-semibold text-[#1C1917]">Klik batang untuk melihat rincian bulan</p>
+                        <div class="flex shrink-0 gap-3 text-xs tabular-nums">
+                            <span class="text-[#2F7D4A]">Masuk <strong id="cashflow-detail-in">Rp 0</strong></span>
+                            <span class="text-[#A83838]">Keluar <strong id="cashflow-detail-out">Rp 0</strong></span>
+                        </div>
+                    </div>
+                    <div class="mt-3 grid gap-3 lg:grid-cols-2">
+                        <section class="min-w-0">
+                            <h4 class="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[#2F7D4A]">Pemasukan</h4>
+                            <div id="cashflow-detail-income" class="space-y-2"></div>
+                        </section>
+                        <section class="min-w-0">
+                            <h4 class="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[#A83838]">Pengeluaran</h4>
+                            <div id="cashflow-detail-expense" class="space-y-2"></div>
+                        </section>
+                    </div>
+                </div>
             </article>
 
             <article class="min-w-0 overflow-hidden rounded-2xl border border-[#ECE8DA] bg-white">
@@ -58,19 +79,67 @@ const chartIsDark = document.documentElement.classList.contains('dark');
 let cashflowChart = null;
 if (cashflowNode && window.ApexCharts) {
 cashflowChart = new ApexCharts(cashflowNode, {
-    chart:{type:'bar',height:250,width:'100%',stacked:true,toolbar:{show:false},fontFamily:'Plus Jakarta Sans, sans-serif',parentHeightOffset:0,background:'transparent',foreColor:chartIsDark?'#9E988A':'#6B665C'},theme:{mode:chartIsDark?'dark':'light'},
-    series:[{name:'Pemasukan',data:@json($tren_pemasukan)},{name:'Pengeluaran',data:@json($tren_pengeluaran)}],
-    colors:[chartIsDark?'#F5B316':'#E09F09',chartIsDark?'#463817':'#ECE8DA'],plotOptions:{bar:{horizontal:false,columnWidth:'42%',borderRadius:6,borderRadiusApplication:'end'}},dataLabels:{enabled:false},
+    chart:{type:'bar',height:250,width:'100%',stacked:true,toolbar:{show:false},fontFamily:'Plus Jakarta Sans, sans-serif',parentHeightOffset:0,background:'transparent',foreColor:chartIsDark?'#9E988A':'#6B665C',events:{
+        dataPointSelection: function(_event, _chart, config) {
+            if (typeof tampilkanRincianPemasukan === 'function') {
+                tampilkanRincianPemasukan(config.dataPointIndex);
+            }
+        }
+    }},theme:{mode:chartIsDark?'dark':'light'},
+    series:[
+        {name:'Layanan warga',data:@json($tren_layanan_warga)},
+        {name:'Pemasukan manual',data:@json($tren_pemasukan_manual)},
+        {name:'Pengeluaran',data:@json($tren_pengeluaran)}
+    ],
+    colors:[chartIsDark?'#86C69A':'#2F7D4A',chartIsDark?'#F5B316':'#E09F09',chartIsDark?'#D58A8A':'#A83838'],plotOptions:{bar:{horizontal:false,columnWidth:'42%',borderRadius:5,borderRadiusApplication:'end'}},dataLabels:{enabled:false},
     xaxis:{categories:@json($label_bulan),axisBorder:{show:false},axisTicks:{show:false},labels:{trim:true,hideOverlappingLabels:true,style:{colors:chartIsDark?'#9E988A':'#6B665C',fontSize:'11px'}}},
     yaxis:{min:0,forceNiceScale:true,labels:{formatter:formatRupiahRingkas,style:{colors:chartIsDark?'#9E988A':'#6B665C',fontSize:'10px'}}},
     grid:{borderColor:chartIsDark?'#302C23':'#ECE8DA',strokeDashArray:4,xaxis:{lines:{show:false}}},legend:{show:false},
-    tooltip:{theme:chartIsDark?'dark':'light',y:{formatter:formatRupiahLengkap}},states:{hover:{filter:{type:'lighten',value:.08}},active:{filter:{type:'none'}}}
+    tooltip:{theme:chartIsDark?'dark':'light',shared:false,intersect:true,y:{formatter:formatRupiahLengkap}},states:{hover:{filter:{type:'lighten',value:.08}},active:{filter:{type:'none'}}}
 });
 cashflowChart.render();
 window.addEventListener('bumcash:theme-change', (event) => {
     const dark = Boolean(event.detail?.dark);
-    cashflowChart.updateOptions({ theme:{mode:dark?'dark':'light'}, chart:{foreColor:dark?'#9E988A':'#6B665C'}, colors:[dark?'#F5B316':'#E09F09',dark?'#463817':'#ECE8DA'], xaxis:{labels:{style:{colors:dark?'#9E988A':'#6B665C'}}}, yaxis:{labels:{style:{colors:dark?'#9E988A':'#6B665C'}}}, grid:{borderColor:dark?'#302C23':'#ECE8DA'}, tooltip:{theme:dark?'dark':'light'} });
+    cashflowChart.updateOptions({ theme:{mode:dark?'dark':'light'}, chart:{foreColor:dark?'#9E988A':'#6B665C'}, colors:[dark?'#86C69A':'#2F7D4A',dark?'#F5B316':'#E09F09',dark?'#D58A8A':'#A83838'], xaxis:{labels:{style:{colors:dark?'#9E988A':'#6B665C'}}}, yaxis:{labels:{style:{colors:dark?'#9E988A':'#6B665C'}}}, grid:{borderColor:dark?'#302C23':'#ECE8DA'}, tooltip:{theme:dark?'dark':'light'} });
 });
+}
+
+const rincianPemasukan = @json($rincian_pemasukan);
+const rincianPengeluaran = @json($rincian_pengeluaran);
+const labelBulanChart = @json($label_bulan);
+const layananWargaPerBulan = @json($tren_layanan_warga);
+const pemasukanManualPerBulan = @json($tren_pemasukan_manual);
+const pengeluaranPerBulan = @json($tren_pengeluaran);
+const pemasukanTotalPerBulan = layananWargaPerBulan.map((nilai, index) => Number(nilai) + Number(pemasukanManualPerBulan[index]));
+
+function tampilkanRincianPemasukan(index) {
+    const periode = labelBulanChart[index] || '';
+    const pemasukan = rincianPemasukan[index] || [];
+    const pengeluaran = rincianPengeluaran[index] || [];
+    const periodeNode = document.querySelector('#cashflow-detail-period');
+    const inNode = document.querySelector('#cashflow-detail-in');
+    const outNode = document.querySelector('#cashflow-detail-out');
+    const incomeNode = document.querySelector('#cashflow-detail-income');
+    const expenseNode = document.querySelector('#cashflow-detail-expense');
+    if (!periodeNode || !inNode || !outNode || !incomeNode || !expenseNode) return;
+
+    periodeNode.textContent = periode;
+    inNode.textContent = formatRupiahLengkap(pemasukanTotalPerBulan[index] || 0);
+    outNode.textContent = formatRupiahLengkap(pengeluaranPerBulan[index] || 0);
+
+    const escapeHtml = (nilai) => String(nilai).replace(/[&<>"']/g, (karakter) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[karakter]);
+    const renderItem = (item, color) => '<div class="flex items-start gap-3 rounded-lg border border-[#ECE8DA] bg-white px-3 py-2.5">'
+            + '<span class="mt-1.5 h-2 w-2 shrink-0 rounded-sm ' + color + '"></span>'
+            + '<div class="min-w-0 flex-1"><p class="text-xs font-semibold text-[#1C1917]">' + escapeHtml(item.unit) + ' · ' + escapeHtml(item.kategori) + '</p>'
+            + '<p class="mt-1 text-[11px] text-[#6B665C]">' + escapeHtml(item.sumber) + ' · ' + escapeHtml(item.tanggal) + '</p></div>'
+            + '<strong class="shrink-0 text-xs tabular-nums text-[#1C1917]">' + formatRupiahLengkap(item.nominal) + '</strong></div>';
+
+    incomeNode.innerHTML = pemasukan.length
+        ? pemasukan.map((item) => renderItem(item, item.sumber === 'Pembayaran layanan warga' ? 'bg-[#2F7D4A]' : 'bg-[#E09F09]')).join('')
+        : '<p class="rounded-lg border border-dashed border-[#ECE8DA] px-3 py-5 text-center text-xs text-[#6B665C]">Tidak ada pemasukan.</p>';
+    expenseNode.innerHTML = pengeluaran.length
+        ? pengeluaran.map((item) => renderItem(item, 'bg-[#A83838]')).join('')
+        : '<p class="rounded-lg border border-dashed border-[#ECE8DA] px-3 py-5 text-center text-xs text-[#6B665C]">Tidak ada pengeluaran.</p>';
 }
 </script>
 @endsection
