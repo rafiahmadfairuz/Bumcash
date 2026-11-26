@@ -19,6 +19,7 @@ Roadmap mencatat status modul dan kriteria penyelesaian aplikasi dengan autentik
 - [x] Penolakan beserta alasan tanpa penambahan kas.
 - [x] Pencatatan kas manual terikat unit dan kategori.
 - [x] Pengelolaan penyertaan modal dan aset.
+- [x] Manajemen Unit Usaha dan Layanan & Tarif yang terkait.
 
 ## Fase 4 — Dashboard dan laporan
 - [x] KPI, grafik, buku besar, dan filter.
@@ -31,4 +32,5 @@ Roadmap mencatat status modul dan kriteria penyelesaian aplikasi dengan autentik
 - [ ] Middleware memisahkan akses peran pengelola dan warga.
 - [ ] Profil hanya berisi identitas dan logout.
 - [ ] Audit istilah, dropdown, tema, tautan, dan tampilan cetak.
+- [x] Halaman manajemen Unit Usaha dengan rapor keuangan, CRUD aman, serta pengelolaan layanan dan tarif.
 - Selesai bila alur masuk, pembatasan lintas peran, pencatatan keuangan, dan logout tervalidasi.

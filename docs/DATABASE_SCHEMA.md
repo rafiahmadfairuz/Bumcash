@@ -7,7 +7,7 @@ Sumber acuan untuk tabel, kolom, relasi, status, dan aturan penyimpanan.
 `id`, `kode_pelanggan` nullable, `nama_lengkap`, `username` unique, `password` hashed, `role` enum (`PENGELOLA`, `ADMIN`, `WARGA`), `alamat_dusun`, `no_telepon` nullable, timestamps.
 
 ### `unit_usaha`
-`id`, `kode_unit` unique, `nama_unit`, `penanggung_jawab`, `status_aktif` boolean.
+`id`, `kode_unit` unique, `nama_unit`, `penanggung_jawab`, `deskripsi` text nullable, `status_aktif` boolean.
 
 ### `layanan`
 `id`, `unit_usaha_id` FK, `nama_layanan`, `satuan`, `tarif_dasar` decimal(12,2), `deskripsi` text.

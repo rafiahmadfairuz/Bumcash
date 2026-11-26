@@ -20,7 +20,8 @@ Bumcash mendukung layanan tagihan warga dan pengelolaan keuangan BUMDes multi-un
 2. Pengelola memeriksa pengajuan yang menunggu. Konfirmasi atomik memperbarui tagihan dan transaksi menjadi `SELESAI`, serta mencatat pemasukan ke buku kas pada Unit Usaha layanan terkait. Penolakan menyimpan alasan, mengubah transaksi menjadi `DITOLAK`, dan mengembalikan tagihan ke `BELUM_DIBAYAR` tanpa jurnal pemasukan.
 3. Pencatatan kas manual mewajibkan Unit Usaha, jenis arus, Kategori Akun, tanggal, nominal, uraian, dan pencatat.
 4. Pengelolaan mencakup Penyertaan Modal Desa dan aset inventaris yang teralokasi ke Unit Usaha.
-5. Laporan menyajikan laba/rugi per unit, piutang, rekap modal/aset, serta alokasi SHU/PADes menurut persentase AD/ART yang ditetapkan.
+5. Manajemen Unit Usaha menyediakan pembuatan, perubahan, penonaktifan/pengaktifan, serta penghapusan aman untuk Unit Usaha dan layanan beserta tarifnya. Unit yang sudah memiliki transaksi/layanan/aset/modal tidak dihapus agar riwayat keuangan tetap utuh.
+6. Laporan menyajikan laba/rugi per unit, piutang, rekap modal/aset, serta alokasi SHU/PADes menurut persentase AD/ART yang ditetapkan.
 
 ## 5. Aturan keuangan
 - Pendapatan unit = jumlah jurnal `PEMASUKAN` untuk unit dan periode.
