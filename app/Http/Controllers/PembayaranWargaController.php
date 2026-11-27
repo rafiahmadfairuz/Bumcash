@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Tagihan;
 use App\Models\Layanan;
 use App\Models\TransaksiPembayaran;
+use App\Models\PermintaanTagihanVariabel;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,7 +25,9 @@ class PembayaranWargaController extends Controller
             ->get();
 
         $layananTerdaftar = Tagihan::where('user_id', $warga->id)->distinct()->pluck('layanan_id');
+        $langgananAktif = DB::table('langganan_layanan')->where('user_id', $warga->id)->where('status', 'AKTIF')->pluck('layanan_id');
         $layanan = Layanan::with('unitUsaha')
+            ->where('status_aktif', true)->where('tampil_di_katalog', true)
             ->whereHas('unitUsaha', fn ($query) => $query->where('status_aktif', true))
             ->orderBy('nama_layanan')->get();
         $transaksiTerbaru = TransaksiPembayaran::with(['tagihan.layanan.unitUsaha'])
@@ -40,6 +43,7 @@ class PembayaranWargaController extends Controller
             'totalLunas' => (float) $totalLunas,
             'layananAktif' => $layananAktif,
             'layananTerdaftar' => $layananTerdaftar,
+            'langgananAktif' => $langgananAktif,
             'layanan' => $layanan,
             'transaksiTerbaru' => $transaksiTerbaru,
         ]);
@@ -53,6 +57,40 @@ class PembayaranWargaController extends Controller
             ->findOrFail($tagihan);
 
         return view('warga.detail-tagihan', compact('warga', 'tagihan'));
+    }
+
+    public function beli(Request $request, int $layanan): RedirectResponse
+    {
+        $warga = $this->wargaAktif();
+        $service = Layanan::where('status_aktif', true)->where('tampil_di_katalog', true)->whereHas('unitUsaha', fn ($query) => $query->where('status_aktif', true))->findOrFail($layanan);
+        if ($service->jenis_layanan === 'TAGIHAN_VARIABEL') {
+            $data = $request->validate(['nomor_objek' => ['required', 'string', 'max:100']]);
+            PermintaanTagihanVariabel::create(['user_id' => $warga->id, 'layanan_id' => $service->id, 'nomor_objek' => $data['nomor_objek']]);
+            return back()->with('success', 'Permintaan pengecekan terkirim. Pengelola akan memeriksa tagihan melalui kanal provider resmi.');
+        }
+        if ($service->jenis_layanan === 'BULANAN') {
+            $request->validate(['setuju_langganan' => ['accepted']]);
+        }
+        if ($service->jenis_layanan === 'BULANAN') {
+            DB::table('langganan_layanan')->updateOrInsert(
+                ['user_id' => $warga->id, 'layanan_id' => $service->id, 'status' => 'AKTIF'],
+                ['disetujui_pada' => now(), 'updated_at' => now(), 'created_at' => now()]
+            );
+        }
+        $tagihan = DB::transaction(function () use ($warga, $layanan) {
+            $layanan = Layanan::with('unitUsaha')->where('status_aktif', true)->where('tampil_di_katalog', true)->whereHas('unitUsaha', fn ($query) => $query->where('status_aktif', true))->lockForUpdate()->findOrFail($layanan);
+            abort_unless($layanan->jenis_layanan !== 'TAGIHAN_VARIABEL', 422, 'Tagihan variabel harus melalui pengecekan provider.');
+            $bulan = now()->month;
+            $tahun = now()->year;
+            return Tagihan::create([
+                'kode_tagihan' => 'BEL-'.now()->format('YmdHis').'-'.Str::upper(Str::random(5)),
+                'user_id' => $warga->id, 'layanan_id' => $layanan->id,
+                'periode_bulan' => $bulan, 'periode_tahun' => $tahun,
+                'rincian_pemakaian' => ($layanan->jenis_layanan === 'BULANAN' ? 'Langganan ' : 'Pembelian ').$layanan->nama_layanan,
+                'nominal' => $layanan->tarif_dasar, 'jatuh_tempo' => now()->toDateString(), 'status' => 'BELUM_DIBAYAR',
+            ]);
+        });
+        return redirect()->route('warga.tagihan.detail', $tagihan)->with('success', 'Pesanan dibuat. Lanjutkan pembayaran dari rincian tagihan.');
     }
 
     public function ajukanPembayaran(Request $request, int $tagihan): RedirectResponse

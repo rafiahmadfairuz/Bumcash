@@ -7,8 +7,11 @@ use App\Models\AsetInventaris;
 use App\Models\PenyertaanModal;
 use App\Models\TransaksiPembayaran;
 use App\Models\UnitUsaha;
+use App\Models\Tagihan;
+use App\Models\User;
 use App\Services\ArusKasService;
 use App\Services\PembayaranVerifikasiService;
+use App\Services\PembayaranManualService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -30,7 +33,24 @@ class PengelolaKeuanganController extends Controller
             ->oldest('waktu_bayar')
             ->paginate(10);
 
-        return view('pengelola.verifikasi', compact('transaksi'));
+        return view('pengelola.verifikasi', [
+            'transaksi' => $transaksi,
+            'wargaAktif' => User::where('role', 'WARGA')->orderBy('nama_lengkap')->get(['id', 'nama_lengkap', 'kode_pelanggan']),
+            'tagihanBelumDibayar' => Tagihan::with(['warga', 'layanan.unitUsaha'])->where('status', 'BELUM_DIBAYAR')->orderBy('jatuh_tempo')->limit(300)->get(),
+        ]);
+    }
+
+    public function catatPembayaranManual(Request $request, PembayaranManualService $service): RedirectResponse
+    {
+        $actor = $this->pastikanPengelola();
+        $data = $request->validate([
+            'tagihan_id' => ['required', 'integer', 'exists:tagihan,id'],
+            'metode_pembayaran' => ['required', Rule::in(['TUNAI_LOKET', 'TRANSFER_BANK_DESA'])],
+            'referensi_admin' => ['nullable', 'string', 'max:100', 'unique:transaksi_pembayaran,referensi_admin'],
+            'catatan_pengelola' => ['nullable', 'string', 'max:255'],
+        ]);
+        $payment = $service->catat($data['tagihan_id'], $actor->id, $data['metode_pembayaran'], $data['referensi_admin'] ?? null, $data['catatan_pengelola'] ?? null);
+        return back()->with('success', 'Pembayaran '.$payment->kode_transaksi.' dicatat dan ditautkan ke warga serta jurnal kas.');
     }
 
     public function konfirmasi(int $transaksi, PembayaranVerifikasiService $service): RedirectResponse

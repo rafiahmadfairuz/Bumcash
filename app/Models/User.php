@@ -18,5 +18,6 @@ class User extends Authenticatable implements MustVerifyEmail
     public function hasVerifiedEmail(): bool { return blank($this->email) || parent::hasVerifiedEmail(); }
     public function tagihan(){return $this->hasMany(Tagihan::class);}
     public function transaksiPembayaran(){return $this->hasMany(TransaksiPembayaran::class);}
+    public function paymentTransactions(){return $this->hasMany(PaymentTransaction::class);}
     public function arusKasDicatat(){return $this->hasMany(ArusKas::class,'dicatat_oleh');}
 }

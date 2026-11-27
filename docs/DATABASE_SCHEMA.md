@@ -27,11 +27,24 @@ Sumber acuan untuk tabel, kolom, relasi, status, dan aturan penyimpanan.
 ### `aset_inventaris`
 `id`, `kode_aset` unique, `unit_usaha_id` FK, `nama_aset`, `tanggal_perolehan`, `nilai_perolehan` decimal(12,2), `kondisi` enum (`BAIK`, `PERLU_PERBAIKAN`, `RUSAK_BERAT`).
 
+### `payment_transactions` dan `payment_webhook_events`
+Gateway provider-agnostic yang additive dan nonaktif secara default. Amount decimal, ID internal UUID, referensi provider nullable, idempotency key unik per tagihan. Webhook event unik per provider/event ID. Lihat `docs/PAYMENT_INFRASTRUCTURE.md`.
+
+### `tagihan_utilitas`
+Catatan tagihan PLN/PDAM/PBB dengan Unit Usaha, penyedia, nomor objek opsional, periode, nominal, biaya tambahan, tanggal, tempo, status pencatatan dan referensi pembayaran. Pencatatan awal membuat utang usaha, bukan jurnal kas.
+
+### `piutang_usaha`, `utang_usaha`, `settlement_usaha`
+Piutang/utang dagang mencatat pihak, referensi dokumen, deskripsi, unit, tanggal, tempo, nominal dan saldo. Settlement dapat parsial; setiap settlement membuat jurnal kas dan audit petugas secara atomik. Tabel settlement menunjuk entitas melalui pasangan `jenis_entitas`/`entitas_id` (polymorphic tanpa FK langsung), sementara `arus_kas_id` memiliki FK unik.
+
+### `transaksi_pembayaran` (audit pencatatan pengelola)
+Kolom tambahan `dicatat_oleh` nullable untuk mempertahankan transaksi lama dan `referensi_admin` nullable unique untuk idempotency/manual audit.
+
 ## 2. Relasi
 - Unit Usaha memiliki banyak layanan, jurnal kas, modal, dan aset.
 - Layanan memiliki banyak tagihan; warga memiliki banyak tagihan dan transaksi.
 - Tagihan memiliki banyak transaksi pembayaran; transaksi berhasil dapat memiliki satu jurnal kas.
 - Pengelola memiliki banyak jurnal kas yang dicatat.
+- Tagihan utilitas memiliki satu utang usaha; settlement utang utilitas memperbarui status tagihan.
 
 ## 3. Integritas
 Tagihan dan transaksi warga harus konsisten statusnya. Jurnal kas layanan hanya dibuat pada verifikasi sukses, wajib merujuk ke Unit Usaha yang menyediakan layanan, dan tidak boleh tercatat lebih dari sekali untuk transaksi yang sama. Penolakan tidak membuat jurnal pemasukan. Nominal kas disimpan positif dan arah transaksi ditentukan oleh `jenis`.

@@ -20,6 +20,10 @@ Roadmap mencatat status modul dan kriteria penyelesaian aplikasi dengan autentik
 - [x] Pencatatan kas manual terikat unit dan kategori.
 - [x] Pengelolaan penyertaan modal dan aset.
 - [x] Manajemen Unit Usaha dan Layanan & Tarif yang terkait.
+- [x] Arsip layanan yang telah ditagihkan; layanan nonaktif tidak muncul dalam katalog warga.
+- [x] Infrastruktur pembayaran generik nonaktif default, mock local/testing, dan webhook tanpa endpoint publik sebelum verifikasi provider.
+- [x] Catatan tagihan utilitas PLN/PDAM/PBB serta piutang/utang dagang dan settlement kas atomik.
+- [x] Pencatatan pembayaran warga oleh pengelola dengan audit petugas dan referensi unik.
 
 ## Fase 4 — Dashboard dan laporan
 - [x] KPI, grafik, buku besar, dan filter.

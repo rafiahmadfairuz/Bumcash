@@ -1,0 +1,10 @@
+<?php
+
+namespace App\Payments\Contracts;
+
+use Illuminate\Http\Request;
+
+interface WebhookVerifier
+{
+    public function verify(Request $request): bool;
+}
