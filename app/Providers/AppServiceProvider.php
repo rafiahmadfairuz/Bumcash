@@ -7,6 +7,8 @@ use App\Models\TransaksiPembayaran;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\View;
+use App\Payments\PaymentManager;
+use App\Payments\Contracts\PaymentGateway;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -15,7 +17,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(PaymentManager::class);
     }
 
     /**
